@@ -64,21 +64,25 @@ module Diffy
 
         dir1 = chunk1.each_char.first
         dir2 = chunk2.each_char.first
-        case [dir1, dir2]
-        when ['-', '+']
-          if chunk1.each_char.take(3).join("") =~ /^(---|\+\+\+|\\\\)/ and
-              chunk2.each_char.take(3).join("") =~ /^(---|\+\+\+|\\\\)/
-            ERB::Util.h(chunk1)
+        if @options[:intra_line_diffs] == true
+          case [dir1, dir2]
+          when ['-', '+']
+            if chunk1.each_char.take(3).join("") =~ /^(---|\+\+\+|\\\\)/ and
+                chunk2.each_char.take(3).join("") =~ /^(---|\+\+\+|\\\\)/
+              ERB::Util.h(chunk1)
+            else
+              line_diff = Diffy::Diff.new(
+                                          split_characters(chunk1),
+                                          split_characters(chunk2),
+                                          Diffy::Diff::ORIGINAL_DEFAULT_OPTIONS
+                                          )
+              hi1 = reconstruct_characters(line_diff, '-')
+              hi2 = reconstruct_characters(line_diff, '+')
+              processed << (index + 1)
+              [hi1, hi2]
+            end
           else
-            line_diff = Diffy::Diff.new(
-                                        split_characters(chunk1),
-                                        split_characters(chunk2),
-                                        Diffy::Diff::ORIGINAL_DEFAULT_OPTIONS
-                                        )
-            hi1 = reconstruct_characters(line_diff, '-')
-            hi2 = reconstruct_characters(line_diff, '+')
-            processed << (index + 1)
-            [hi1, hi2]
+            ERB::Util.h(chunk1)
           end
         else
           ERB::Util.h(chunk1)
